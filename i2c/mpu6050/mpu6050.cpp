@@ -34,13 +34,12 @@ void MPU6050::calibrate() {
     }
 
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        int16_t* gyro_values = get_raw_gyro();
+        std::array<int16_t, 3> gyro_values = get_raw_gyro();
 
         for (int i = 0; i < 3; i++) {
             this->gyro_offsets[i] += gyro_values[i];
         }
 
-        delete[] gyro_values;
         delay(this->sampling_delay);
     }
 
@@ -122,8 +121,8 @@ void MPU6050::set_configs(const pwr_mngmt_t& pwr_mgmt, const config_t& config) {
     write8(REG_ACCEL_CONFIG, config.acc_range << 3);
 }
 
-int16_t* MPU6050::get_raw_gyro() {
-    int16_t* gyro_values = new int16_t[3];
+std::array<int16_t, 3> MPU6050::get_raw_gyro() {
+    std::array<int16_t, 3> gyro_values;
 
     uint8_t buffer[6];
     read_data(REG_GYRO, buffer, 6);
@@ -135,8 +134,8 @@ int16_t* MPU6050::get_raw_gyro() {
     return gyro_values;
 }
 
-int16_t* MPU6050::get_raw_acc() {
-    int16_t* acc_values = new int16_t[3];
+std::array<int16_t, 3> MPU6050::get_raw_acc() {
+    std::array<int16_t, 3> acc_values;
 
     uint8_t buffer[6];
     read_data(REG_ACCEL, buffer, 6);
@@ -159,18 +158,16 @@ void MPU6050::update_task_entry_point(void* obj) {
 }
 
 void MPU6050::update_task() {
-    int16_t* gyro = get_raw_gyro();
-    int16_t* acc = get_raw_acc();
+    std::array<int16_t, 3> gyro = get_raw_gyro();
+    std::array<int16_t, 3> acc = get_raw_acc();
 
     double gyroX = (gyro[0] - gyro_offsets[0]) / gyro_resolution;
     double gyroY = (gyro[1] - gyro_offsets[1]) / gyro_resolution;
     double gyroZ = (gyro[2] - gyro_offsets[2]) / gyro_resolution;
-    delete[] gyro;
     
     double accX = ((double)acc[0]) / acc_resolution;
     double accY = ((double)acc[1]) / acc_resolution;
     double accZ = ((double)acc[2]) / acc_resolution;
-    delete[] acc;
 
     double dt = (esp_timer_get_time() - dt_timer) * 1e-6;
 
