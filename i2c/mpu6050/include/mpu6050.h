@@ -3,6 +3,7 @@
 
 #include "i2c_dev.h"
 #include "calibrate.h"
+#include <array>
 
 namespace mpu {
     #define RAD_2_DEG       57.29578
@@ -113,8 +114,8 @@ namespace mpu {
         double get_yaw();
 
     private:
-        int16_t* get_raw_gyro();
-        int16_t* get_raw_acc();
+        std::array<int16_t, 3> get_raw_gyro();
+        std::array<int16_t, 3> get_raw_acc();
 
         static void update_task_entry_point(void* obj);
         void update_task();

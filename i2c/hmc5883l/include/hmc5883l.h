@@ -3,6 +3,7 @@
 
 #include "i2c_dev.h"
 #include "calibrate.h"
+#include <array>
 
 namespace hmc {
     #define SAMPLE_SIZE 5000
@@ -95,10 +96,10 @@ namespace hmc {
 
         void set_configs(const config_a_t& config_A = {SAMPLE_SIZE_8, OUTPUT_RATE_75}, const config_b_t& config_B = {MAG_GAIN_1_3});
 
-        double* get_magXYZ();
+        std::array<double, 3> get_magXYZ();
 
     private:
-        int16_t* get_raw_mag();
+        std::array<int16_t, 3> get_raw_mag();
     };
 } // namespace hmc
 
