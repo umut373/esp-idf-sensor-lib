@@ -28,13 +28,12 @@ void HMC5883L::calibrate() {
     }
 
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        int16_t* mag_values = get_raw_mag();
+        std::array<double, 3> mag_values = get_raw_mag();
 
         for (int i = 0; i < 3; i++) {
             mag_offsets[i] += mag_values[i];
         }
 
-        delete[] mag_values;
         delay(1);
     }
 
@@ -81,20 +80,19 @@ void HMC5883L::set_configs(const config_a_t& config_A, const config_b_t& config_
     write8(REG_CONFIG_B, config_B.get());
 }
 
-double* HMC5883L::get_magXYZ() {
-    int16_t* raw_mag_values = get_raw_mag();
+std::array<double, 3> HMC5883L::get_magXYZ() {
+    std::array<int16_t, 3> raw_mag_values = get_raw_mag();
 
-    double* magXYZ = new double[3];
+    std::array<double, 3> magXYZ;
     for (int i = 0; i < 3; i++) {
         magXYZ[i] = (double)raw_mag_values[i] / this->mag_resolution;
     }
-    delete raw_mag_values;
 
     return magXYZ;
 }
 
-int16_t* HMC5883L::get_raw_mag() {
-    int16_t* mag_values = new int16_t[3];
+std::array<int16_t, 3> HMC5883L::get_raw_mag() {
+    std::array<int16_t, 3> mag_values;
 
     uint8_t buffer[6];
     read_data(REG_DATA, buffer, 6);
