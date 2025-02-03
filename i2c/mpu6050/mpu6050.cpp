@@ -19,6 +19,8 @@ bool MPU6050::init() {
         return false;
     }
 
+    ESP_ERROR_CHECK(nvs_open("mpu6050_calib", NVS_READWRITE, &this->nvs_handle));
+
     write8(REG_PWR_MGMT_1, pwr_mgmt.reset());
     write8(REG_SMPLRT_DIV, 0x00);
     set_configs();
@@ -29,29 +31,40 @@ bool MPU6050::init() {
 }
 
 void MPU6050::calibrate() {
-    for (int i = 0; i < 3; i++) {
-        this->gyro_offsets[i] = 0.0;
-    }
+    calibration_data_t calib_data;
+    size_t size = sizeof(calib_data);
 
-    for (int i = 0; i < SAMPLE_SIZE; i++) {
-        std::array<int16_t, 3> gyro_values = get_raw_gyro();
+    esp_err_t result = nvs_get_blob(this->nvs_handle, "mpu6050_calib", &calib_data, &size);
 
+    if (result == ESP_OK) {
+        this->gyro_offsets[0] = calib_data.gyro_x;
+        this->gyro_offsets[1] = calib_data.gyro_y;
+        this->gyro_offsets[2] = calib_data.gyro_z;
+    } else {
         for (int i = 0; i < 3; i++) {
-            this->gyro_offsets[i] += gyro_values[i];
+            this->gyro_offsets[i] = 0.0;
         }
 
-        delay(this->sampling_delay);
-    }
+        for (int i = 0; i < SAMPLE_SIZE; i++) {
+            std::array<int16_t, 3> gyro_values = get_raw_gyro();
 
-    for (int i = 0; i < 3; i++) {
-        this->gyro_offsets[i] /= SAMPLE_SIZE;
-    }
-}
+            for (int i = 0; i < 3; i++) {
+                this->gyro_offsets[i] += gyro_values[i];
+            }
 
-void MPU6050::calibrate(const calibration_data_t& calib_data) {
-    this->gyro_offsets[0] = calib_data.gyro_x;
-    this->gyro_offsets[1] = calib_data.gyro_y;
-    this->gyro_offsets[2] = calib_data.gyro_z;
+            delay(this->sampling_delay);
+        }
+
+        for (int i = 0; i < 3; i++) {
+            this->gyro_offsets[i] /= SAMPLE_SIZE;
+        }
+
+        calib_data.gyro_x = this->gyro_offsets[0];
+        calib_data.gyro_y = this->gyro_offsets[1];
+        calib_data.gyro_z = this->gyro_offsets[2];
+
+        nvs_set_blob(this->nvs_handle, "mpu6050_calib", &calib_data, size);
+    }
 }
 
 void MPU6050::begin() {

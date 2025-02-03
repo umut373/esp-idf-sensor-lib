@@ -113,7 +113,7 @@ namespace imu {
         uint16_t mag_radius;
     };
 
-class BNO055 : public I2Cdev, public Calibrate<calibration_data_t> {
+class BNO055 : public I2Cdev, public Calibrate {
     opr_mode_t mode;
     calibration_data_t offsets;
 
@@ -123,7 +123,7 @@ public:
 
     virtual bool init() override;
     virtual void calibrate() override;
-    virtual void calibrate(const calibration_data_t& calib_data) override;
+
     void set_configs(const config_t& config = {0x80, REMAP_P0, OPR_MODE_INDOF});
 
     std::array<uint8_t, 4> get_calib_status();

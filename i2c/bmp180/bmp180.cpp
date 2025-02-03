@@ -28,6 +28,8 @@ bool BMP180::init() {
         return false;
     }
 
+    ESP_ERROR_CHECK(nvs_open("bmp180_calib", NVS_READWRITE, &this->nvs_handle));
+
     read_calibration_parameters();
     return true;
 }
@@ -45,16 +47,20 @@ void BMP180::read_calibration_parameters() {
 }
 
 void BMP180::calibrate() {
-    double p0 = 0;
-    for (int i = 0; i < SAMPLE_SIZE; i++) {
-        p0 += get_pressure();
+    uint64_t calib_data;
+    esp_err_t result = nvs_get_u64(this->nvs_handle, "bmp180_calib", &calib_data);
+
+    if (result == ESP_OK) {
+        this->p0 = std::bit_cast<double>(calib_data);
+    } else {
+        this->p0 = 0;
+        double p0 = 0;
+        for (int i = 0; i < SAMPLE_SIZE; i++) {
+            p0 += get_pressure();
+        }
+        this->p0 = p0 / SAMPLE_SIZE;
+        nvs_set_u64(this->nvs_handle, "bmp180_calib", std::bit_cast<uint64_t>(this->p0));
     }
-
-    this->p0 = p0 / SAMPLE_SIZE;
-}
-
-void BMP180::calibrate(const calibration_data_t& calib_data) {
-    this->p0 = calib_data.p0;
 }
 
 double BMP180::get_temperature() {

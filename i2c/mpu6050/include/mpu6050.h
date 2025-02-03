@@ -87,7 +87,7 @@ namespace mpu {
         double gyro_z = 0.0;
     };
 
-    class MPU6050: public I2Cdev, public Calibrate<calibration_data_t> {
+    class MPU6050: public I2Cdev, public Calibrate {
         pwr_mngmt_t pwr_mgmt;
         config_t config;
 
@@ -104,7 +104,6 @@ namespace mpu {
 
         virtual bool init() override;
         virtual void calibrate() override;
-        virtual void calibrate(const calibration_data_t& calib_data) override;
         void begin();
 
         void set_configs(const pwr_mngmt_t& pwr_mgmt = { 0, 0, 0, 1, PLL_GYRO_X }, const config_t& config = {BAND_5_HZ, GYRO_500_DPS, ACCEL_4_G});
