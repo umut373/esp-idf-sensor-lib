@@ -44,11 +44,8 @@ namespace bmp {
         ULTRA_HIGH_RES = 0x03
     };
 
-    struct calibration_data_t {
-        double p0;
-    };
 
-    class BMP180 : public I2Cdev, public Calibrate<calibration_data_t> {
+    class BMP180 : public I2Cdev, public Calibrate {
         resulation_mode_t oss;
         cal_params_t cal_params;
         double p0;
@@ -61,7 +58,6 @@ namespace bmp {
 
         virtual bool init() override;
         virtual void calibrate() override;
-        virtual void calibrate(const calibration_data_t& calib_data) override;
 
         double get_temperature();
         double get_pressure();

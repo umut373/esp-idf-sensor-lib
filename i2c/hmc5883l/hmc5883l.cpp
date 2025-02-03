@@ -19,33 +19,46 @@ bool HMC5883L::init() {
     write8(REG_MODE, MODE_CONT);
     set_configs();
 
+    ESP_ERROR_CHECK(nvs_open("hmc5883l_calib", NVS_READWRITE, &this->nvs_handle));
+
     return true;
 }
 
 void HMC5883L::calibrate() {
-    for (int i = 0; i < 3; i++) {
-        this->mag_offsets[i] = 0.0;
-    }
+    calibration_data_t calib_data;
+    size_t size = sizeof(calib_data);
 
-    for (int i = 0; i < SAMPLE_SIZE; i++) {
-        std::array<double, 3> mag_values = get_raw_mag();
+    esp_err_t result = nvs_get_blob(this->nvs_handle, "hmc5883l_calib", &calib_data, &size);
 
+    if (result == ESP_OK) {
+        this->mag_offsets[0] = calib_data.mag_x;
+        this->mag_offsets[1] = calib_data.mag_y;
+        this->mag_offsets[2] = calib_data.mag_z;
+    } else {
         for (int i = 0; i < 3; i++) {
-            mag_offsets[i] += mag_values[i];
+        this->mag_offsets[i] = 0.0;
         }
 
-        delay(1);
-    }
+        for (int i = 0; i < SAMPLE_SIZE; i++) {
+            std::array<int16_t, 3> mag_values = get_raw_mag();
 
-    for (int i = 0; i < 3; i++) {
-        this->mag_offsets[i] /= SAMPLE_SIZE;
-    }
-}
+            for (int i = 0; i < 3; i++) {
+                this->mag_offsets[i] += mag_values[i];
+            }
 
-void HMC5883L::calibrate(const calibration_data_t& calib_data) {
-    mag_offsets[0] = calib_data.mag_x;
-    mag_offsets[1] = calib_data.mag_y;
-    mag_offsets[2] = calib_data.mag_z;
+            delay(1);
+        }
+
+        for (int i = 0; i < 3; i++) {
+            this->mag_offsets[i] /= SAMPLE_SIZE;
+        }
+
+        calib_data.mag_x = this->mag_offsets[0];
+        calib_data.mag_y = this->mag_offsets[1];
+        calib_data.mag_z = this->mag_offsets[2];
+
+        nvs_set_blob(this->nvs_handle, "hmc5883l_calib", &calib_data, size);
+    }
 }
 
 void HMC5883L::set_configs(const config_a_t& config_A, const config_b_t& config_B) {
