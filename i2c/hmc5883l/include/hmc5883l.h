@@ -81,7 +81,7 @@ namespace hmc {
     };
 
 
-    class HMC5883L : public I2Cdev, public Calibrate<calibration_data_t> {
+    class HMC5883L : public I2Cdev, public Calibrate {
         int16_t mag_resolution;
         double mag_offsets[3];
 
@@ -92,7 +92,6 @@ namespace hmc {
 
         virtual bool init() override;
         virtual void calibrate() override;
-        virtual void calibrate(const calibration_data_t& calib_data) override;
 
         void set_configs(const config_a_t& config_A = {SAMPLE_SIZE_8, OUTPUT_RATE_75}, const config_b_t& config_B = {MAG_GAIN_1_3});
 
