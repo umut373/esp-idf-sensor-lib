@@ -50,6 +50,11 @@ GPS::GPS(uart_port_t uart_port, gpio_num_t txd_pin, gpio_num_t rxd_pin) {
     uart_set_pin(uart_port, txd_pin, rxd_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 }
 
+GPS::~GPS() {
+    stop();
+    ESP_ERROR_CHECK(uart_driver_delete(UART_NUM));
+}
+
 void GPS::init() {
     uart_write_bytes(UART_NUM, PMTK_API_SET_FIX_CTL_5HZ, strlen(PMTK_API_SET_FIX_CTL_5HZ));
     uart_write_bytes(UART_NUM, PMTK_SET_NMEA_UPDATE_2HZ, strlen(PMTK_SET_NMEA_UPDATE_2HZ));

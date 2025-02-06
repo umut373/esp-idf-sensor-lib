@@ -31,6 +31,7 @@ namespace gps {
     public:
         GPS();
         GPS(uart_port_t uart_port, gpio_num_t txd_pin, gpio_num_t rxd_pin);
+        ~GPS();
 
         void init();
         void begin();
