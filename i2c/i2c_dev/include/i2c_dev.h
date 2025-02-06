@@ -13,9 +13,12 @@ class I2Cdev {
 
     inline static i2c_master_bus_handle_t bus_handle = NULL;
     inline static bool bus_initialized = false;
+    inline static int sensor_count = 0;
 
 public:
     I2Cdev(uint8_t address);
+    virtual ~I2Cdev();
+
     virtual bool init() = 0;
 
 protected:

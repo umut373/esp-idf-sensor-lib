@@ -31,6 +31,17 @@ I2Cdev::I2Cdev(uint8_t address) {
         }
     };
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_config, &dev_handle));
+    sensor_count++;
+}
+
+I2Cdev::~I2Cdev() {
+    ESP_ERROR_CHECK(i2c_master_bus_rm_device(dev_handle));
+    sensor_count--;
+
+    if (!sensor_count) {
+        ESP_ERROR_CHECK(i2c_del_master_bus(bus_handle));
+        bus_initialized = false;
+    }
 }
 
 void I2Cdev::write8(const uint8_t reg, const uint8_t buffer) {
