@@ -16,6 +16,7 @@ bool BNO055::init() {
         return false;
 
     ESP_ERROR_CHECK(nvs_open("bno055_calib", NVS_READWRITE, &this->nvs_handle));
+    this->nvs_count++;
 
     set_configs();
     delay(20);

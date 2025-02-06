@@ -20,6 +20,7 @@ bool MPU6050::init() {
     }
 
     ESP_ERROR_CHECK(nvs_open("mpu6050_calib", NVS_READWRITE, &this->nvs_handle));
+    this->nvs_count++;
 
     write8(REG_PWR_MGMT_1, pwr_mgmt.reset());
     write8(REG_SMPLRT_DIV, 0x00);
