@@ -20,6 +20,7 @@ bool HMC5883L::init() {
     set_configs();
 
     ESP_ERROR_CHECK(nvs_open("hmc5883l_calib", NVS_READWRITE, &this->nvs_handle));
+    this->nvs_count++;
 
     return true;
 }

@@ -29,6 +29,7 @@ bool BMP180::init() {
     }
 
     ESP_ERROR_CHECK(nvs_open("bmp180_calib", NVS_READWRITE, &this->nvs_handle));
+    this->nvs_count++;
 
     read_calibration_parameters();
     return true;
