@@ -88,6 +88,8 @@ namespace mpu {
     };
 
     class MPU6050: public I2Cdev, public Calibrate {
+        TaskHandle_t update_task_handle = NULL;
+
         pwr_mngmt_t pwr_mgmt;
         config_t config;
 
@@ -101,10 +103,13 @@ namespace mpu {
     public:
         MPU6050();
         MPU6050(uint8_t address);
+        ~MPU6050();
 
         virtual bool init() override;
         virtual void calibrate() override;
+
         void begin();
+        void stop();
 
         void set_configs(const pwr_mngmt_t& pwr_mgmt = { 0, 0, 0, 1, PLL_GYRO_X }, const config_t& config = {BAND_5_HZ, GYRO_500_DPS, ACCEL_4_G});
 
