@@ -23,6 +23,8 @@
 
 namespace gps {
     class GPS {
+        TaskHandle_t update_task_handle = NULL;
+
         bool fix;
         double latitude;
         double longitude;
@@ -35,6 +37,7 @@ namespace gps {
 
         void init();
         void begin();
+        void stop();
 
         bool get_fix();
         double get_lat_deg();

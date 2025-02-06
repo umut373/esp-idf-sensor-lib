@@ -65,7 +65,16 @@ void GPS::init() {
 }
 
 void GPS::begin() {
-    xTaskCreate(uart_event_task_entry_point, "GPS_UART_EVENT", 2048, this, 12, NULL);
+    if (!this->update_task_handle) {
+        xTaskCreate(uart_event_task_entry_point, "GPS_UART_EVENT", 2048, this, 12, &this->update_task_handle);
+    }
+}
+
+void GPS::stop() {
+    if (this->update_task_handle) {
+        vTaskDelete(this->update_task_handle);
+        this->update_task_handle = NULL;
+    }
 }
 
 void GPS::uart_event_task_entry_point(void* obj) {
