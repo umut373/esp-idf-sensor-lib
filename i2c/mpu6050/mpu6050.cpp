@@ -31,6 +31,10 @@ bool MPU6050::init() {
     return true;
 }
 
+MPU6050::~MPU6050() {
+    stop();
+}
+
 void MPU6050::calibrate() {
     calibration_data_t calib_data;
     size_t size = sizeof(calib_data);
@@ -69,8 +73,17 @@ void MPU6050::calibrate() {
 }
 
 void MPU6050::begin() {
-    dt_timer = esp_timer_get_time();
-    xTaskCreate(update_task_entry_point, "MPU6050_UPDATE", 2048, this, 1, NULL);
+    if (!this->update_task_handle) {
+        dt_timer = esp_timer_get_time();
+        xTaskCreate(update_task_entry_point, "MPU6050_UPDATE", 2048, this, 5, &this->update_task_handle);
+    }
+}
+
+void MPU6050::stop() {
+    if (this->update_task_handle) {
+        vTaskDelete(this->update_task_handle);
+        this->update_task_handle = NULL;
+    }
 }
 
 void MPU6050::set_configs(const pwr_mngmt_t& pwr_mgmt, const config_t& config) {
