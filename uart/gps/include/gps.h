@@ -24,6 +24,8 @@
 namespace gps {
     class GPS {
         TaskHandle_t update_task_handle = NULL;
+        QueueHandle_t uart_queue = NULL;
+        SemaphoreHandle_t data_mutex = NULL;
 
         bool fix;
         double latitude;
