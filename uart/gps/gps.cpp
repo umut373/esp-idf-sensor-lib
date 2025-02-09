@@ -7,8 +7,6 @@
 using namespace gps;
 
 static const char *TAG = "uart_events";
-static QueueHandle_t uart_queue;
-static SemaphoreHandle_t data_mutex = xSemaphoreCreateMutex();
 
 GPS::GPS() {
     uart_config_t uart_config = {
@@ -25,7 +23,7 @@ GPS::GPS() {
         }
     };
 
-    uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 20, &uart_queue, 0);
+    uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 20, &this->uart_queue, 0);
     uart_param_config(UART_NUM, &uart_config);
     uart_set_pin(UART_NUM, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 }
@@ -45,7 +43,7 @@ GPS::GPS(uart_port_t uart_port, gpio_num_t txd_pin, gpio_num_t rxd_pin) {
         }
     };
 
-    uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 20, &uart_queue, 0);
+    uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 20, &this->uart_queue, 0);
     uart_param_config(UART_NUM, &uart_config);
     uart_set_pin(uart_port, txd_pin, rxd_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 }
@@ -65,12 +63,23 @@ void GPS::init() {
 }
 
 void GPS::begin() {
+    if (!this->data_mutex) {
+        this->data_mutex = xSemaphoreCreateMutex();
+    }
+
     if (!this->update_task_handle) {
         xTaskCreate(uart_event_task_entry_point, "GPS_UART_EVENT", 2048, this, 12, &this->update_task_handle);
     }
 }
 
 void GPS::stop() {
+    if (this->data_mutex) {
+        if(xSemaphoreGetMutexHolder(this->data_mutex)) 
+            xSemaphoreGive(this->data_mutex);
+
+        vSemaphoreDelete(this->data_mutex);
+    }
+
     if (this->update_task_handle) {
         vTaskDelete(this->update_task_handle);
         this->update_task_handle = NULL;
@@ -90,7 +99,7 @@ void GPS::uart_event_task_entry_point(void* obj) {
 }
 
 void GPS::uart_event_task(uart_event_t event, uint8_t* data) {
-    if (xQueueReceive(uart_queue, (void *)&event, (TickType_t)portMAX_DELAY)) {
+    if (xQueueReceive(this->uart_queue, (void *)&event, (TickType_t)portMAX_DELAY)) {
         bzero(data, BUF_SIZE);
         switch (event.type) {
             case UART_DATA:
@@ -100,11 +109,11 @@ void GPS::uart_event_task(uart_event_t event, uint8_t* data) {
                 break;
             case UART_FIFO_OVF:
                 uart_flush_input(UART_NUM);
-                xQueueReset(uart_queue);
+                xQueueReset(this->uart_queue);
                 break;
             case UART_BUFFER_FULL:
                 uart_flush_input(UART_NUM);
-                xQueueReset(uart_queue);
+                xQueueReset(this->uart_queue);
                 break;
             case UART_BREAK:
                 ESP_LOGI(TAG, "uart rx break");
@@ -148,9 +157,9 @@ void GPS::uart_event_task(uart_event_t event, uint8_t* data) {
 bool GPS::get_fix() {
     static bool fix_val = false;
 
-    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(this->data_mutex, 0) == pdTRUE) {
         fix_val = this->fix;
-        xSemaphoreGive(data_mutex);
+        xSemaphoreGive(this->data_mutex);
     }
     return fix_val;
 }
@@ -158,10 +167,10 @@ bool GPS::get_fix() {
 double GPS::get_long_deg() {
     static double long_val = 0.0;
 
-    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(this->data_mutex, 0) == pdTRUE) {
         int degrees = static_cast<int>(this->longitude) / 100;
         double minutes = this->longitude - (degrees * 100);
-        xSemaphoreGive(data_mutex);
+        xSemaphoreGive(this->data_mutex);
 
         long_val = degrees + (minutes / 60.0);
     }
@@ -171,10 +180,10 @@ double GPS::get_long_deg() {
 double GPS::get_lat_deg() {
     static double lat_val = 0.0;
 
-    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(this->data_mutex, 0) == pdTRUE) {
         int degrees = static_cast<int>(this->latitude) / 100;
         double minutes = this->latitude - (degrees * 100);
-        xSemaphoreGive(data_mutex);
+        xSemaphoreGive(this->data_mutex);
 
         lat_val = degrees + (minutes / 60.0);
     }
@@ -184,9 +193,9 @@ double GPS::get_lat_deg() {
 double GPS::get_alt() {
     static double alt_val = 0.0;
 
-    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(this->data_mutex, 0) == pdTRUE) {
         alt_val = this->altitude;
-        xSemaphoreGive(data_mutex);
+        xSemaphoreGive(this->data_mutex);
     }
     return alt_val;
 }
@@ -228,7 +237,7 @@ void GPS::parse_NMEA_data(uint8_t* buffer) {
     }
     parsed_data.push_back(data.substr(pos_start));
 
-    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(this->data_mutex, portMAX_DELAY) == pdTRUE) {
         if (parsed_data[6].empty()) {
             this->fix = false;
             this->latitude = 0.0;
@@ -249,6 +258,6 @@ void GPS::parse_NMEA_data(uint8_t* buffer) {
             }
         }
 
-        xSemaphoreGive(data_mutex);
+        xSemaphoreGive(this->data_mutex);
     }
 }
