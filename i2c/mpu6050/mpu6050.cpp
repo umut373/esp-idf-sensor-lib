@@ -4,8 +4,6 @@
 
 using namespace mpu;
 
-static SemaphoreHandle_t data_mutex = xSemaphoreCreateMutex();
-
 inline int16_t get_short(uint8_t* buffer, int offset) {
     return (buffer[offset] << 8 ) + buffer[offset + 1];
 }
@@ -73,6 +71,10 @@ void MPU6050::calibrate() {
 }
 
 void MPU6050::begin() {
+    if (!this->data_mutex) {
+        this->data_mutex = xSemaphoreCreateMutex();
+    }
+
     if (!this->update_task_handle) {
         dt_timer = esp_timer_get_time();
         xTaskCreate(update_task_entry_point, "MPU6050_UPDATE", 2048, this, 5, &this->update_task_handle);
@@ -80,6 +82,13 @@ void MPU6050::begin() {
 }
 
 void MPU6050::stop() {
+    if (this->data_mutex) {
+        if(xSemaphoreGetMutexHolder(this->data_mutex)) 
+            xSemaphoreGive(this->data_mutex);
+
+        vSemaphoreDelete(this->data_mutex);
+    }
+
     if (this->update_task_handle) {
         vTaskDelete(this->update_task_handle);
         this->update_task_handle = NULL;
@@ -201,12 +210,12 @@ void MPU6050::update_task() {
     double acc_roll = atan2(accY, accZ + abs(accX)) * RAD_2_DEG;
     double acc_pitch = -atan2(accX, accZ + abs(accY)) * RAD_2_DEG;
 
-    if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
+    if (xSemaphoreTake(this->data_mutex, portMAX_DELAY)) {
         this->roll = 0.98 * (this->roll + gyroX * dt) + 0.02 * acc_roll;
         this->pitch = 0.98 * (this->pitch + gyroY * dt) + 0.02 * acc_pitch;
         this->yaw += gyroZ * dt;
 
-        xSemaphoreGive(data_mutex);
+        xSemaphoreGive(this->data_mutex);
     }
 
     dt_timer = esp_timer_get_time();
@@ -215,9 +224,9 @@ void MPU6050::update_task() {
 double MPU6050::get_roll() {
     static double roll_val = 0.0;
 
-    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(this->data_mutex, 0) == pdTRUE) {
         roll_val = this->roll;
-        xSemaphoreGive(data_mutex);
+        xSemaphoreGive(this->data_mutex);
     }
     return roll_val;
 }
@@ -225,9 +234,9 @@ double MPU6050::get_roll() {
 double MPU6050::get_pitch() {
     static double pitch_val = 0.0;
 
-    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(this->data_mutex, 0) == pdTRUE) {
         pitch_val = this->pitch;
-        xSemaphoreGive(data_mutex);
+        xSemaphoreGive(this->data_mutex);
     }
     return pitch_val;
 }
@@ -235,9 +244,9 @@ double MPU6050::get_pitch() {
 double MPU6050::get_yaw() {
     static double yaw_val = 0.0;
 
-    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(this->data_mutex, 0) == pdTRUE) {
         yaw_val = this->yaw;
-        xSemaphoreGive(data_mutex);
+        xSemaphoreGive(this->data_mutex);
     }
     return yaw_val;
 }

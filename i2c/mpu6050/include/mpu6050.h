@@ -89,6 +89,7 @@ namespace mpu {
 
     class MPU6050: public I2Cdev, public Calibrate {
         TaskHandle_t update_task_handle = NULL;
+        SemaphoreHandle_t data_mutex = NULL;
 
         pwr_mngmt_t pwr_mgmt;
         config_t config;
