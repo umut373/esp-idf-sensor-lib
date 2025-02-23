@@ -21,3 +21,21 @@ Calibrate::~Calibrate() {
         nvs_initialized = false;
     }
 }
+
+void Calibrate::open_storage(const std::string& nvs_name) {
+    this->nvs_name = nvs_name;
+    ESP_ERROR_CHECK(nvs_open(nvs_name.c_str(), NVS_READWRITE, &this->nvs_handle));
+    nvs_count++;
+}
+
+template <typename T>
+bool Calibrate::get_nvs_data(T* buffer) {
+    size_t size = sizeof(T);
+    return nvs_get_blob(this->nvs_handle, this->nvs_name.c_str(), buffer, &size) == ESP_OK;
+}
+
+template <typename T>
+void Calibrate::set_nvs_data(const T& data) {
+    ESP_ERROR_CHECK(nvs_set_blob(this->nvs_handle, this->nvs_name.c_str(), &data, sizeof(T)));
+    ESP_ERROR_CHECK(nvs_commit(this->nvs_handle));
+}

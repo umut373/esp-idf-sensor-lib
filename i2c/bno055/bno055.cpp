@@ -15,8 +15,7 @@ bool BNO055::init() {
     if (!check_device() || read8(REG_CHIP_ID) != CHIP_ID || read8(REG_ACC_ID) != ACC_ID || read8(REG_MAG_ID) != MAG_ID || read8(REG_GYR_ID) != GYR_ID)
         return false;
 
-    ESP_ERROR_CHECK(nvs_open("bno055_calib", NVS_READWRITE, &this->nvs_handle));
-    this->nvs_count++;
+    open_storage("bno055_calib");
 
     set_configs();
     delay(20);
@@ -26,11 +25,9 @@ bool BNO055::init() {
 
 void BNO055::calibrate() {
     calibration_data_t calib_data;
-    size_t size = sizeof(calib_data);
+    bool result = get_nvs_data<calibration_data_t>(&calib_data);
 
-    esp_err_t result = nvs_get_blob(this->nvs_handle, "bno055_calib", &calib_data, &size);
-
-    if (result == ESP_OK) {
+    if (result) {
         reset();
 
         const uint8_t* offsets = reinterpret_cast<const uint8_t*>(&calib_data);
@@ -58,7 +55,7 @@ void BNO055::calibrate() {
             calib_ptr[i] = get_short_le(calib_buffer, i << 1);
         }
 
-        nvs_set_blob(this->nvs_handle, "bno055_calib", &calib_data, size);
+        set_nvs_data<calibration_data_t>(calib_data);
     }
 }
 
