@@ -44,6 +44,10 @@ I2Cdev::~I2Cdev() {
     }
 }
 
+bool I2Cdev::check_device() {
+    return i2c_master_probe(bus_handle, address, -1) == ESP_OK;
+}
+
 void I2Cdev::write8(const uint8_t reg, const uint8_t buffer) {
     uint8_t data[] = {reg, buffer};
     ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data, 2, -1));

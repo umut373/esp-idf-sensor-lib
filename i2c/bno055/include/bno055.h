@@ -29,6 +29,7 @@ namespace imu {
         REG_UNIT_SEL = 0x3B,
         REG_OPR_MODE = 0x3D,
         REG_PWR_MODE = 0x3E,
+        REG_SYS_TRIGGER = 0x3F,
         REG_AXIS_REMAP_CONF = 0x41,
         REG_AXIS_REMAP_SIGN = 0x42,
         REG_OFFSET = 0x55
@@ -100,7 +101,6 @@ namespace imu {
     };
 
     struct config_t {
-        uint8_t unit_select;
         remap_t axis_remap; 
         opr_mode_t mode;
     };
@@ -108,14 +108,14 @@ namespace imu {
     struct calibration_data_t {
         uint16_t acc_x, acc_y, acc_z;
         uint16_t mag_x, mag_y, mag_z;
-        uint16_t gyro_x,  gyro_y, gyro_z;
+        uint16_t gyro_x, gyro_y, gyro_z;
         uint16_t acc_radius;
         uint16_t mag_radius;
     };
 
 class BNO055 : public I2Cdev, public Calibrate {
     opr_mode_t mode;
-    calibration_data_t offsets;
+    remap_t remap;
 
 public:
     BNO055();
@@ -124,12 +124,14 @@ public:
     virtual bool init() override;
     virtual void calibrate() override;
 
-    void set_configs(const config_t& config = {0x80, REMAP_P0, OPR_MODE_INDOF});
+    void set_configs(const config_t& config = {REMAP_P0, OPR_MODE_INDOF});
 
     std::array<uint8_t, 4> get_calib_status();
     std::vector<double> get_data_vector(vector_t vector);
 
 private:
+    void reset();
+
     void set_mode(opr_mode_t mode);
     void set_axis_remap(remap_t remap);
 

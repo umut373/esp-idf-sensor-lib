@@ -22,6 +22,8 @@ public:
     virtual bool init() = 0;
 
 protected:
+    bool check_device();
+
     void write8(const uint8_t reg, const uint8_t buffer);
     void write16(const uint8_t reg, const uint16_t buffer);
 

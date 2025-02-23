@@ -31,16 +31,14 @@ void BNO055::calibrate() {
     esp_err_t result = nvs_get_blob(this->nvs_handle, "bno055_calib", &calib_data, &size);
 
     if (result == ESP_OK) {
-        write8(REG_OPR_MODE, OPR_MODE_CONFIG);
-        delay(10);
+        reset();
 
         const uint8_t* offsets = reinterpret_cast<const uint8_t*>(&calib_data);
         for (uint8_t i = 0; i < 22; i++) {
             write8(REG_OFFSET + i, offsets[i]);
         }
 
-        write8(REG_OPR_MODE, this->mode);
-        delay(10);
+        set_configs({this->remap, this->mode});
     } else {
         while(!is_fully_calibrated()) {
             delay(500);
@@ -67,7 +65,7 @@ void BNO055::calibrate() {
 void BNO055::set_configs(const config_t& config) {
     write8(REG_OPR_MODE, OPR_MODE_CONFIG);
     delay(10);
-    write8(REG_UNIT_SEL, config.unit_select);
+    write8(REG_UNIT_SEL, 0x80);
     delay(10);
     set_axis_remap(config.axis_remap);
     delay(10);
@@ -163,12 +161,25 @@ std::array<uint8_t, 4> BNO055::get_calib_status() {
     return data_array;
 }
 
+void BNO055::reset() {
+    write8(REG_OPR_MODE, OPR_MODE_CONFIG);
+    delay(10);
+    write8(REG_SYS_TRIGGER, 0x20);
+
+    // wait for the device to reboot
+    while(!check_device()) {
+        delay(1);
+    }
+}
+
 void BNO055::set_mode(opr_mode_t mode) {
     this->mode = mode;
     write8(REG_OPR_MODE, mode);
 }
 
 void BNO055::set_axis_remap(remap_t remap) {
+    this->remap = remap;
+
     switch(remap) {
         case REMAP_P0:
             write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P0);
