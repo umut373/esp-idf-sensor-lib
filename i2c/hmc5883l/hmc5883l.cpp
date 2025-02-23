@@ -19,19 +19,16 @@ bool HMC5883L::init() {
     write8(REG_MODE, MODE_CONT);
     set_configs();
 
-    ESP_ERROR_CHECK(nvs_open("hmc5883l_calib", NVS_READWRITE, &this->nvs_handle));
-    this->nvs_count++;
+    open_storage("hmc5883l_calib");
 
     return true;
 }
 
 void HMC5883L::calibrate() {
     calibration_data_t calib_data;
-    size_t size = sizeof(calib_data);
+    bool result = get_nvs_data<calibration_data_t>(&calib_data);
 
-    esp_err_t result = nvs_get_blob(this->nvs_handle, "hmc5883l_calib", &calib_data, &size);
-
-    if (result == ESP_OK) {
+    if (result) {
         this->mag_offsets[0] = calib_data.mag_x;
         this->mag_offsets[1] = calib_data.mag_y;
         this->mag_offsets[2] = calib_data.mag_z;
@@ -58,7 +55,7 @@ void HMC5883L::calibrate() {
         calib_data.mag_y = this->mag_offsets[1];
         calib_data.mag_z = this->mag_offsets[2];
 
-        nvs_set_blob(this->nvs_handle, "hmc5883l_calib", &calib_data, size);
+        set_nvs_data<calibration_data_t>(calib_data);
     }
 }
 

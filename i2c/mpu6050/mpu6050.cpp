@@ -17,8 +17,7 @@ bool MPU6050::init() {
         return false;
     }
 
-    ESP_ERROR_CHECK(nvs_open("mpu6050_calib", NVS_READWRITE, &this->nvs_handle));
-    this->nvs_count++;
+    open_storage("mpu6050_calib");
 
     write8(REG_PWR_MGMT_1, pwr_mgmt.reset());
     write8(REG_SMPLRT_DIV, 0x00);
@@ -35,11 +34,9 @@ MPU6050::~MPU6050() {
 
 void MPU6050::calibrate() {
     calibration_data_t calib_data;
-    size_t size = sizeof(calib_data);
+    bool result = get_nvs_data<calibration_data_t>(&calib_data);
 
-    esp_err_t result = nvs_get_blob(this->nvs_handle, "mpu6050_calib", &calib_data, &size);
-
-    if (result == ESP_OK) {
+    if (result) {
         this->gyro_offsets[0] = calib_data.gyro_x;
         this->gyro_offsets[1] = calib_data.gyro_y;
         this->gyro_offsets[2] = calib_data.gyro_z;
@@ -66,7 +63,7 @@ void MPU6050::calibrate() {
         calib_data.gyro_y = this->gyro_offsets[1];
         calib_data.gyro_z = this->gyro_offsets[2];
 
-        nvs_set_blob(this->nvs_handle, "mpu6050_calib", &calib_data, size);
+        set_nvs_data<calibration_data_t>(calib_data);
     }
 }
 
