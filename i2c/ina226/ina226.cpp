@@ -8,7 +8,7 @@ INA226::INA226() : I2Cdev::I2Cdev(ADDRESS) {}
 INA226::INA226(uint8_t address) : I2Cdev::I2Cdev(address) {}
 
 bool INA226::init() {
-    if (read16(REG_ID) != CHIP_ID) {
+    if (!check_device() || read16(REG_ID) != CHIP_ID) {
         return false;
     }
 

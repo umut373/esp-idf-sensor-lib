@@ -24,7 +24,7 @@ BMP180::BMP180(uint8_t address, resulation_mode_t oss) : I2Cdev::I2Cdev(address)
 }
 
 bool BMP180::init() {
-    if (read8(REG_ID) != CHIP_ID) {
+    if (!check_device() || read8(REG_ID) != CHIP_ID) {
         return false;
     }
 

@@ -12,7 +12,7 @@ BME280::BME280() : I2Cdev::I2Cdev(ADDRESS) {}
 BME280::BME280(uint8_t address) : I2Cdev::I2Cdev(address) {}
 
 bool BME280::init() {
-    if (read8(REG_ID) != CHIP_ID) {
+    if (!check_device() || read8(REG_ID) != CHIP_ID) {
         return false;
     }
 

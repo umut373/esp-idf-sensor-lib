@@ -12,7 +12,7 @@ BNO055::BNO055() : I2Cdev(ADDRESS), Calibrate::Calibrate() {}
 BNO055::BNO055(uint8_t address) : I2Cdev(address), Calibrate::Calibrate() {}
 
 bool BNO055::init() {
-    if (read8(REG_CHIP_ID) != CHIP_ID || read8(REG_ACC_ID) != ACC_ID || read8(REG_MAG_ID) != MAG_ID || read8(REG_GYR_ID) != GYR_ID)
+    if (!check_device() || read8(REG_CHIP_ID) != CHIP_ID || read8(REG_ACC_ID) != ACC_ID || read8(REG_MAG_ID) != MAG_ID || read8(REG_GYR_ID) != GYR_ID)
         return false;
 
     ESP_ERROR_CHECK(nvs_open("bno055_calib", NVS_READWRITE, &this->nvs_handle));

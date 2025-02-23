@@ -13,7 +13,7 @@ MPU6050::MPU6050() : I2Cdev(ADDRESS), Calibrate::Calibrate() {}
 MPU6050::MPU6050(uint8_t address) : I2Cdev(address), Calibrate::Calibrate() {}
 
 bool MPU6050::init() {
-    if (read8(REG_ID) != CHIP_ID) {
+    if (!check_device() || read8(REG_ID) != CHIP_ID) {
         return false;
     }
 

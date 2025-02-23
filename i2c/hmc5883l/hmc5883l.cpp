@@ -13,7 +13,7 @@ HMC5883L::HMC5883L(uint8_t address) : I2Cdev(address), Calibrate::Calibrate() {}
 HMC5883L::~HMC5883L() {}
 
 bool HMC5883L::init() {
-    if (read8(REG_ID_A) != ID_A || read8(REG_ID_B) != ID_B || read8(REG_ID_C) != ID_C)
+    if (!check_device() || read8(REG_ID_A) != ID_A || read8(REG_ID_B) != ID_B || read8(REG_ID_C) != ID_C)
         return false;
 
     write8(REG_MODE, MODE_CONT);
