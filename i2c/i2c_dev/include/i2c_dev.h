@@ -19,6 +19,7 @@ public:
     I2Cdev(uint8_t address);
     virtual ~I2Cdev();
 
+    void initialize(gpio_num_t sda, gpio_num_t scl);
     virtual bool init() = 0;
 
 protected:

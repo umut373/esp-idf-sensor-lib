@@ -1,26 +1,9 @@
 #include "i2c_dev.h"
 
 I2Cdev::I2Cdev(uint8_t address) {
-    if (!bus_initialized) {
-        i2c_master_bus_config_t bus_config = {
-            .i2c_port = -1,
-            .sda_io_num = GPIO_NUM_21,
-            .scl_io_num = GPIO_NUM_22,
-            .clk_source = I2C_CLK_SRC_DEFAULT,
-            .glitch_ignore_cnt = 7,
-            .intr_priority = 0,
-            .trans_queue_depth = 0,
-            .flags = {
-                .enable_internal_pullup = true,
-                .allow_pd = false
-            }
-        };
-        ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
-        bus_initialized = true;
-    }
+    initialize(GPIO_NUM_21, GPIO_NUM_22);
 
     this->address = address;
-
     i2c_device_config_t dev_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = address,
@@ -41,6 +24,26 @@ I2Cdev::~I2Cdev() {
     if (!sensor_count) {
         ESP_ERROR_CHECK(i2c_del_master_bus(bus_handle));
         bus_initialized = false;
+    }
+}
+
+void I2Cdev::initialize(gpio_num_t sda, gpio_num_t scl) {
+    if (!bus_initialized) {
+        i2c_master_bus_config_t bus_config = {
+            .i2c_port = -1,
+            .sda_io_num = sda,
+            .scl_io_num = scl,
+            .clk_source = I2C_CLK_SRC_DEFAULT,
+            .glitch_ignore_cnt = 7,
+            .intr_priority = 0,
+            .trans_queue_depth = 0,
+            .flags = {
+                .enable_internal_pullup = true,
+                .allow_pd = false
+            }
+        };
+        ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
+        bus_initialized = true;
     }
 }
 
