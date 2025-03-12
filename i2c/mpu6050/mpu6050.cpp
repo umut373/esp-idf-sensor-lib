@@ -1,8 +1,11 @@
 #include "mpu6050.h"
 #include "math.h"
 #include "esp_timer.h"
+#include "esp_log.h"
 
 using namespace mpu;
+
+#include TAG "MPU6050"
 
 inline int16_t get_short(uint8_t* buffer, int offset) {
     return (buffer[offset] << 8 ) + buffer[offset + 1];
@@ -14,6 +17,7 @@ MPU6050::MPU6050(uint8_t address) : I2Cdev(address), Calibrate::Calibrate() {}
 
 bool MPU6050::init() {
     if (!check_device() || read8(REG_ID) != CHIP_ID) {
+        ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
     }
 

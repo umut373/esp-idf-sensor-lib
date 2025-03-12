@@ -1,7 +1,10 @@
 #include "bme280.h"
 #include "math.h"
+#include "esp_log.h"
 
 using namespace bme;
+
+#define TAG "BME280"
 
 inline uint16_t get_short_le(uint8_t* buffer, int offset) {
     return (buffer[offset + 1] << 8 ) + buffer[offset];
@@ -13,6 +16,7 @@ BME280::BME280(uint8_t address) : I2Cdev::I2Cdev(address) {}
 
 bool BME280::init() {
     if (!check_device() || read8(REG_ID) != CHIP_ID) {
+        ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
     }
 

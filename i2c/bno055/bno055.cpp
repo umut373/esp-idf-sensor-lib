@@ -1,7 +1,10 @@
 #include "bno055.h"
 #include "math.h"
+#include "esp_log.h"
 
 using namespace imu;
+
+#define TAG "BNO055"
 
 inline int16_t get_short_le(uint8_t* buffer, int offset) {
     return (buffer[offset + 1] << 8) | buffer[offset];
@@ -12,8 +15,10 @@ BNO055::BNO055() : I2Cdev(ADDRESS), Calibrate::Calibrate() {}
 BNO055::BNO055(uint8_t address) : I2Cdev(address), Calibrate::Calibrate() {}
 
 bool BNO055::init() {
-    if (!check_device() || read8(REG_CHIP_ID) != CHIP_ID || read8(REG_ACC_ID) != ACC_ID || read8(REG_MAG_ID) != MAG_ID || read8(REG_GYR_ID) != GYR_ID)
+    if (!check_device() || read8(REG_CHIP_ID) != CHIP_ID || read8(REG_ACC_ID) != ACC_ID || read8(REG_MAG_ID) != MAG_ID || read8(REG_GYR_ID) != GYR_ID) {
+        ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
+    }
 
     open_storage("bno055_calib");
 

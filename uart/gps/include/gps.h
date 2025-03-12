@@ -55,6 +55,4 @@ namespace gps {
     };
 } // namespace GPS
 
-
-
 #endif // GPS_H_

@@ -1,6 +1,9 @@
 #include "hmc5883l.h"
+#include "esp_log.h"
 
 using namespace hmc;
+
+#define TAG "HMC5883L"
 
 inline int16_t get_short(uint8_t* buffer, int offset) {
     return (buffer[offset] << 8 ) + buffer[offset + 1];
@@ -13,8 +16,10 @@ HMC5883L::HMC5883L(uint8_t address) : I2Cdev(address), Calibrate::Calibrate() {}
 HMC5883L::~HMC5883L() {}
 
 bool HMC5883L::init() {
-    if (!check_device() || read8(REG_ID_A) != ID_A || read8(REG_ID_B) != ID_B || read8(REG_ID_C) != ID_C)
+    if (!check_device() || read8(REG_ID_A) != ID_A || read8(REG_ID_B) != ID_B || read8(REG_ID_C) != ID_C) {
+        ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
+    }
 
     write8(REG_MODE, MODE_CONT);
     set_configs();

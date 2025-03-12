@@ -1,7 +1,10 @@
 #include "ina226.h"
 #include "math.h"
+#include "esp_log.h"
 
 using namespace ina;
+
+#define TAG "INA226"
 
 INA226::INA226() : I2Cdev::I2Cdev(ADDRESS) {}
 
@@ -9,6 +12,7 @@ INA226::INA226(uint8_t address) : I2Cdev::I2Cdev(address) {}
 
 bool INA226::init() {
     if (!check_device() || read16(REG_ID) != CHIP_ID) {
+        ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
     }
 

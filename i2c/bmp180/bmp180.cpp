@@ -1,7 +1,10 @@
 #include "bmp180.h"
 #include "math.h"
+#include "esp_log.h"
 
 using namespace bmp;
+
+#define TAG "BMP180"
 
 inline uint16_t get_short(uint8_t* buffer, int offset) {
     return (buffer[offset] << 8 ) + buffer[offset + 1];
@@ -25,6 +28,7 @@ BMP180::BMP180(uint8_t address, resulation_mode_t oss) : I2Cdev::I2Cdev(address)
 
 bool BMP180::init() {
     if (!check_device() || read8(REG_ID) != CHIP_ID) {
+        ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
     }
 

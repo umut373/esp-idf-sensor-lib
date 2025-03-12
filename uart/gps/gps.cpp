@@ -6,6 +6,8 @@
 
 using namespace gps;
 
+#define TAG "GPS"
+
 GPS::GPS() {
     uart_config_t uart_config = {
         .baud_rate = 9600,
@@ -48,16 +50,25 @@ GPS::GPS(uart_port_t uart_port, gpio_num_t txd_pin, gpio_num_t rxd_pin) {
 
 GPS::~GPS() {
     stop();
-    ESP_ERROR_CHECK(uart_driver_delete(UART_NUM));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(uart_driver_delete(UART_NUM));
 }
 
 void GPS::init() {
-    uart_write_bytes(UART_NUM, PMTK_API_SET_FIX_CTL_5HZ, strlen(PMTK_API_SET_FIX_CTL_5HZ));
-    uart_write_bytes(UART_NUM, PMTK_SET_NMEA_UPDATE_2HZ, strlen(PMTK_SET_NMEA_UPDATE_2HZ));
-    uart_write_bytes(UART_NUM, PMTK_SET_NMEA_OUTPUT_GGAONLY, strlen(PMTK_SET_NMEA_OUTPUT_GGAONLY));
+    if (uart_write_bytes(UART_NUM, PMTK_API_SET_FIX_CTL_5HZ, strlen(PMTK_API_SET_FIX_CTL_5HZ)) < 0) {
+        ESP_LOGE(TAG, "Failed to communicate. Please check the connections.");
+        return;
+    }
+    if (uart_write_bytes(UART_NUM, PMTK_SET_NMEA_UPDATE_2HZ, strlen(PMTK_SET_NMEA_UPDATE_2HZ)) < 0) {
+        ESP_LOGE(TAG, "Failed to communicate. Please check the connections.");
+        return;
+    }
+    if (uart_write_bytes(UART_NUM, PMTK_SET_NMEA_OUTPUT_GGAONLY, strlen(PMTK_SET_NMEA_OUTPUT_GGAONLY)) < 0) {
+        ESP_LOGE(TAG, "Failed to communicate. Please check the connections.");
+        return;
+    }
 
-    uart_enable_pattern_det_baud_intr(UART_NUM, PATTERN, PATTERN_CHR_NUM, 9, 0, 0);
-    uart_pattern_queue_reset(UART_NUM, 20);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(uart_enable_pattern_det_baud_intr(UART_NUM, PATTERN, PATTERN_CHR_NUM, 9, 0, 0));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(uart_pattern_queue_reset(UART_NUM, 20));
 }
 
 void GPS::begin() {
