@@ -108,7 +108,7 @@ void GPS::uart_event_task_entry_point(void* obj) {
 }
 
 void GPS::uart_event_task(uart_event_t event, uint8_t* data) {
-    if (xQueueReceive(uart_queue, (void *)&event, (TickType_t)portMAX_DELAY)) {
+    if (xQueueReceive(this->uart_queue, (void *)&event, (TickType_t)portMAX_DELAY)) {
         bzero(data, BUF_SIZE);
         if (event.type == UART_PATTERN_DET) {
             int pos = uart_pattern_pop_pos(UART_NUM);
@@ -126,7 +126,7 @@ void GPS::uart_event_task(uart_event_t event, uint8_t* data) {
             }
         } else if (event.type == UART_FIFO_OVF || event.type == UART_BUFFER_FULL) {
             uart_flush_input(UART_NUM);
-            xQueueReset(uart_queue);
+            xQueueReset(this->uart_queue);
         }
     }
 }
