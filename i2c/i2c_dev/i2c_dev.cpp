@@ -51,31 +51,31 @@ bool I2Cdev::check_device() {
     return i2c_master_probe(bus_handle, address, -1) == ESP_OK;
 }
 
-void I2Cdev::write8(const uint8_t reg, const uint8_t buffer) {
+void I2Cdev::i2c_write8(const uint8_t reg, const uint8_t buffer) {
     uint8_t data[] = {reg, buffer};
     ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_transmit(dev_handle, data, 2, -1));
 }
 
-void I2Cdev::write16(const uint8_t reg, const uint16_t buffer) {
+void I2Cdev::i2c_write16(const uint8_t reg, const uint16_t buffer) {
     const uint8_t* buffer_arr = reinterpret_cast<const uint8_t*>(&buffer);
     uint8_t data[] = {reg, buffer_arr[1], buffer_arr[0]};
     ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_transmit(dev_handle, data, 3, -1));
 }
 
-uint8_t I2Cdev::read8(const uint8_t reg) {
+uint8_t I2Cdev::i2c_read8(const uint8_t reg) {
     uint8_t buffer;
     ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_transmit_receive(dev_handle, &reg, 1, &buffer, 1, -1));
 
    return buffer;
 }
 
-uint16_t I2Cdev::read16(const uint8_t reg) {
+uint16_t I2Cdev::i2c_read16(const uint8_t reg) {
     uint8_t buffer[2];
     ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_transmit_receive(dev_handle, &reg, 1, buffer, 2, -1));
 
     return (buffer[0] << 8) + buffer[1];
 }
 
-void I2Cdev::read_data(const uint8_t reg, uint8_t* buffer, size_t length) {
+void I2Cdev::i2c_read_data(const uint8_t reg, uint8_t* buffer, size_t length) {
     ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_transmit_receive(dev_handle, &reg, 1, buffer, length, -1));
 }

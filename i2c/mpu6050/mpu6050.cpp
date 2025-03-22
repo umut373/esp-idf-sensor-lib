@@ -16,15 +16,15 @@ MPU6050::MPU6050() : I2Cdev(ADDRESS), Calibrate::Calibrate() {}
 MPU6050::MPU6050(uint8_t address) : I2Cdev(address), Calibrate::Calibrate() {}
 
 bool MPU6050::init() {
-    if (!check_device() || read8(REG_ID) != CHIP_ID) {
+    if (!check_device() || i2c_read8(REG_ID) != CHIP_ID) {
         ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
     }
 
     open_storage("mpu6050_calib");
 
-    write8(REG_PWR_MGMT_1, pwr_mgmt.reset());
-    write8(REG_SMPLRT_DIV, 0x00);
+    i2c_write8(REG_PWR_MGMT_1, pwr_mgmt.reset());
+    i2c_write8(REG_SMPLRT_DIV, 0x00);
     set_configs();
 
     delay(100);
@@ -152,17 +152,17 @@ void MPU6050::set_configs(const pwr_mngmt_t& pwr_mgmt, const config_t& config) {
             this->acc_resolution = 2048.0;
     }
 
-    write8(REG_PWR_MGMT_1, pwr_mgmt.get());
-    write8(REG_CONFIG, config.bandwidth);
-    write8(REG_GYRO_CONFIG, config.gyro_range << 3);
-    write8(REG_ACCEL_CONFIG, config.acc_range << 3);
+    i2c_write8(REG_PWR_MGMT_1, pwr_mgmt.get());
+    i2c_write8(REG_CONFIG, config.bandwidth);
+    i2c_write8(REG_GYRO_CONFIG, config.gyro_range << 3);
+    i2c_write8(REG_ACCEL_CONFIG, config.acc_range << 3);
 }
 
 std::array<int16_t, 3> MPU6050::get_raw_gyro() {
     std::array<int16_t, 3> gyro_values;
 
     uint8_t buffer[6];
-    read_data(REG_GYRO, buffer, 6);
+    i2c_read_data(REG_GYRO, buffer, 6);
 
     for (int i = 0; i < 3; i++) {
         gyro_values[i] = get_short(buffer, i << 1);
@@ -175,7 +175,7 @@ std::array<int16_t, 3> MPU6050::get_raw_acc() {
     std::array<int16_t, 3> acc_values;
 
     uint8_t buffer[6];
-    read_data(REG_ACCEL, buffer, 6);
+    i2c_read_data(REG_ACCEL, buffer, 6);
 
     for (int i = 0; i < 3; i++) {
         acc_values[i] = get_short(buffer, i << 1);

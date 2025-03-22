@@ -16,12 +16,12 @@ HMC5883L::HMC5883L(uint8_t address) : I2Cdev(address), Calibrate::Calibrate() {}
 HMC5883L::~HMC5883L() {}
 
 bool HMC5883L::init() {
-    if (!check_device() || read8(REG_ID_A) != ID_A || read8(REG_ID_B) != ID_B || read8(REG_ID_C) != ID_C) {
+    if (!check_device() || i2c_read8(REG_ID_A) != ID_A || i2c_read8(REG_ID_B) != ID_B || i2c_read8(REG_ID_C) != ID_C) {
         ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
     }
 
-    write8(REG_MODE, MODE_CONT);
+    i2c_write8(REG_MODE, MODE_CONT);
     set_configs();
 
     open_storage("hmc5883l_calib");
@@ -92,8 +92,8 @@ void HMC5883L::set_configs(const config_a_t& config_A, const config_b_t& config_
             break;
     }
 
-    write8(REG_CONFIG_A, config_A.get());
-    write8(REG_CONFIG_B, config_B.get());
+    i2c_write8(REG_CONFIG_A, config_A.get());
+    i2c_write8(REG_CONFIG_B, config_B.get());
 }
 
 std::array<double, 3> HMC5883L::get_magXYZ() {
@@ -111,7 +111,7 @@ std::array<int16_t, 3> HMC5883L::get_raw_mag() {
     std::array<int16_t, 3> mag_values;
 
     uint8_t buffer[6];
-    read_data(REG_DATA, buffer, 6);
+    i2c_read_data(REG_DATA, buffer, 6);
 
     for (int i = 0; i < 3; i++) {
         mag_values[i] = get_short(buffer, i << 1);

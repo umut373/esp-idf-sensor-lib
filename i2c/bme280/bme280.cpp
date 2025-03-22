@@ -15,12 +15,12 @@ BME280::BME280() : I2Cdev::I2Cdev(ADDRESS) {}
 BME280::BME280(uint8_t address) : I2Cdev::I2Cdev(address) {}
 
 bool BME280::init() {
-    if (!check_device() || read8(REG_ID) != CHIP_ID) {
+    if (!check_device() || i2c_read8(REG_ID) != CHIP_ID) {
         ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
     }
 
-    write8(REG_SOFTRESET, 0xB6);
+    i2c_write8(REG_SOFTRESET, 0xB6);
     delay(10);
 
     while (is_reading_calibration()) {
@@ -36,14 +36,14 @@ bool BME280::init() {
 }
 
 bool BME280::is_reading_calibration() {
-    const uint8_t status = read8(REG_STATUS);
+    const uint8_t status = i2c_read8(REG_STATUS);
 
     return (status & 1) != 0;
 }
 
 void BME280::read_calibration_parameters() {
     uint8_t coeffs[24];
-    read_data(REG_CALIB, coeffs, 24);
+    i2c_read_data(REG_CALIB, coeffs, 24);
 
     uint16_t* ptr = reinterpret_cast<uint16_t*>(&this->cal_params);
     size_t length = sizeof(coeffs) / sizeof(uint16_t);
@@ -57,10 +57,10 @@ void BME280::set_configs(const config_t& config_reg, const meas_config_t& meas_r
     this->config_reg = config_reg;
     this->meas_reg = meas_reg;
 
-    write8(REG_CONTROL, MODE_SLEEP);
+    i2c_write8(REG_CONTROL, MODE_SLEEP);
 
-    write8(REG_CONFIG, config_reg.get());
-    write8(REG_CONTROL, meas_reg.get());
+    i2c_write8(REG_CONFIG, config_reg.get());
+    i2c_write8(REG_CONTROL, meas_reg.get());
 }
 
 double BME280::get_temperature() {
@@ -111,14 +111,14 @@ double BME280::get_pressure() {
 
 uint32_t BME280::get_adc_T() {
     uint8_t buffer[3];
-    read_data(REG_TEMP_DATA, buffer, 3);
+    i2c_read_data(REG_TEMP_DATA, buffer, 3);
 
     return ((uint32_t)buffer[0] << 16) | ((uint32_t)buffer[1] << 8) | (uint32_t)buffer[2];
 }
 
 uint32_t BME280::get_adc_P() {
     uint8_t buffer[3];
-    read_data(REG_PRESS_DATA, buffer, 3);
+    i2c_read_data(REG_PRESS_DATA, buffer, 3);
 
     return ((uint32_t)buffer[0] << 16) | ((uint32_t)buffer[1] << 8) | (uint32_t)buffer[2];
 }

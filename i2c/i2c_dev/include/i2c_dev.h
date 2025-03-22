@@ -25,12 +25,12 @@ public:
 protected:
     bool check_device();
 
-    void write8(const uint8_t reg, const uint8_t buffer);
-    void write16(const uint8_t reg, const uint16_t buffer);
+    void i2c_write8(const uint8_t reg, const uint8_t buffer);
+    void i2c_write16(const uint8_t reg, const uint16_t buffer);
 
-    uint8_t read8(const uint8_t reg);
-    uint16_t read16(const uint8_t reg);
-    void read_data(const uint8_t reg, uint8_t* buffer, size_t length);
+    uint8_t i2c_read8(const uint8_t reg);
+    uint16_t i2c_read16(const uint8_t reg);
+    void i2c_read_data(const uint8_t reg, uint8_t* buffer, size_t length);
 };
 
 #endif // I2C_DEV_H_

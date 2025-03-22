@@ -27,7 +27,7 @@ BMP180::BMP180(uint8_t address, resulation_mode_t oss) : I2Cdev::I2Cdev(address)
 }
 
 bool BMP180::init() {
-    if (!check_device() || read8(REG_ID) != CHIP_ID) {
+    if (!check_device() || i2c_read8(REG_ID) != CHIP_ID) {
         ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
     }
@@ -40,7 +40,7 @@ bool BMP180::init() {
 
 void BMP180::read_calibration_parameters() {
     uint8_t coeffs[22];
-    read_data(REG_CALIB, coeffs, 22);
+    i2c_read_data(REG_CALIB, coeffs, 22);
 
     uint16_t* ptr = reinterpret_cast<uint16_t*>(&this->cal_params);
     size_t length = sizeof(coeffs) / sizeof(uint16_t);
@@ -122,24 +122,24 @@ double BMP180::get_altitude() {
 }
 
 double BMP180::get_UT() {
-    write8(REG_MEAS, CRV_TEMP);
+    i2c_write8(REG_MEAS, CRV_TEMP);
 
     delay(5);
 
-    uint8_t MSB = read8(REG_MSB);
-    uint8_t LSB = read8(REG_LSB);
+    uint8_t MSB = i2c_read8(REG_MSB);
+    uint8_t LSB = i2c_read8(REG_LSB);
 
     return  (MSB * 256.0) + LSB;
 }
 
 double BMP180::get_UP() {
-    write8(REG_MEAS, CRV_PRES + (oss << 6));
+    i2c_write8(REG_MEAS, CRV_PRES + (oss << 6));
 
     delay(26);
 
-    uint8_t MSB = read8(REG_MSB);
-    uint8_t LSB = read8(REG_LSB);
-    uint8_t XLSB = read8(REG_XLSB);
+    uint8_t MSB = i2c_read8(REG_MSB);
+    uint8_t LSB = i2c_read8(REG_LSB);
+    uint8_t XLSB = i2c_read8(REG_XLSB);
 
     return (MSB * 256.0) + LSB + (XLSB / 256.0);
 }

@@ -15,7 +15,7 @@ BNO055::BNO055() : I2Cdev(ADDRESS), Calibrate::Calibrate() {}
 BNO055::BNO055(uint8_t address) : I2Cdev(address), Calibrate::Calibrate() {}
 
 bool BNO055::init() {
-    if (!check_device() || read8(REG_CHIP_ID) != CHIP_ID || read8(REG_ACC_ID) != ACC_ID || read8(REG_MAG_ID) != MAG_ID || read8(REG_GYR_ID) != GYR_ID) {
+    if (!check_device() || i2c_read8(REG_CHIP_ID) != CHIP_ID || i2c_read8(REG_ACC_ID) != ACC_ID || i2c_read8(REG_MAG_ID) != MAG_ID || i2c_read8(REG_GYR_ID) != GYR_ID) {
         ESP_LOGE(TAG, "Failed to initialize. Please check the connections.");
         return false;
     }
@@ -37,7 +37,7 @@ void BNO055::calibrate() {
 
         const uint8_t* offsets = reinterpret_cast<const uint8_t*>(&calib_data);
         for (uint8_t i = 0; i < 22; i++) {
-            write8(REG_OFFSET + i, offsets[i]);
+            i2c_write8(REG_OFFSET + i, offsets[i]);
         }
 
         set_configs({this->remap, this->mode});
@@ -46,13 +46,13 @@ void BNO055::calibrate() {
             delay(500);
         }
 
-        write8(REG_OPR_MODE, OPR_MODE_CONFIG);
+        i2c_write8(REG_OPR_MODE, OPR_MODE_CONFIG);
         delay(10);
 
         uint8_t calib_buffer[22];
-        read_data(REG_OFFSET, calib_buffer, 22);
+        i2c_read_data(REG_OFFSET, calib_buffer, 22);
 
-        write8(REG_OPR_MODE, this->mode);
+        i2c_write8(REG_OPR_MODE, this->mode);
         delay(10);
 
         int16_t* calib_ptr = reinterpret_cast<int16_t*>(&calib_data);
@@ -65,9 +65,9 @@ void BNO055::calibrate() {
 }
 
 void BNO055::set_configs(const config_t& config) {
-    write8(REG_OPR_MODE, OPR_MODE_CONFIG);
+    i2c_write8(REG_OPR_MODE, OPR_MODE_CONFIG);
     delay(10);
-    write8(REG_UNIT_SEL, 0x80);
+    i2c_write8(REG_UNIT_SEL, 0x80);
     delay(10);
     set_axis_remap(config.axis_remap);
     delay(10);
@@ -80,7 +80,7 @@ std::vector<double> BNO055::get_data_vector(vector_t vector) {
     switch (vector) {
         case VEC_ACC: {
             uint8_t buffer[6];
-            read_data(REG_ACC_DATA, buffer, 6);
+            i2c_read_data(REG_ACC_DATA, buffer, 6);
 
             data_vector.reserve(3);
             for (int i = 0; i < 3; i++) {
@@ -90,7 +90,7 @@ std::vector<double> BNO055::get_data_vector(vector_t vector) {
         }
         case VEC_MAG: {
             uint8_t buffer[6];
-            read_data(REG_MAG_DATA, buffer, 6);
+            i2c_read_data(REG_MAG_DATA, buffer, 6);
 
             data_vector.reserve(3);
             for (int i = 0; i < 3; i++) {
@@ -100,7 +100,7 @@ std::vector<double> BNO055::get_data_vector(vector_t vector) {
         }
         case VEC_GYR: {
             uint8_t buffer[6];
-            read_data(REG_GYRO_DATA, buffer, 6);
+            i2c_read_data(REG_GYRO_DATA, buffer, 6);
 
             data_vector.reserve(3);
             for (int i = 0; i < 3; i++) {
@@ -110,7 +110,7 @@ std::vector<double> BNO055::get_data_vector(vector_t vector) {
         }
         case VEC_EUL: {
             uint8_t buffer[6];
-            read_data(REG_EUL_DATA, buffer, 6);
+            i2c_read_data(REG_EUL_DATA, buffer, 6);
 
             data_vector.reserve(3);
             for (int i = 0; i < 3; i++) {
@@ -120,7 +120,7 @@ std::vector<double> BNO055::get_data_vector(vector_t vector) {
         }
         case VEC_QUA: {
             uint8_t buffer[8];
-            read_data(REG_QUA_DATA, buffer, 8);
+            i2c_read_data(REG_QUA_DATA, buffer, 8);
 
             data_vector.reserve(4);
             for (int i = 0; i < 4; i++) {
@@ -130,7 +130,7 @@ std::vector<double> BNO055::get_data_vector(vector_t vector) {
         }
         case VEC_LIA: {
             uint8_t buffer[6];
-            read_data(REG_LIA_DATA, buffer, 6);
+            i2c_read_data(REG_LIA_DATA, buffer, 6);
 
             data_vector.reserve(3);
             for (int i = 0; i < 3; i++) {
@@ -140,7 +140,7 @@ std::vector<double> BNO055::get_data_vector(vector_t vector) {
         }
         case VEC_GRV: {
             uint8_t buffer[6];
-            read_data(REG_GRV_DATA, buffer, 6);
+            i2c_read_data(REG_GRV_DATA, buffer, 6);
 
             data_vector.reserve(3);
             for (int i = 0; i < 3; i++) {
@@ -154,7 +154,7 @@ std::vector<double> BNO055::get_data_vector(vector_t vector) {
 
 std::array<uint8_t, 4> BNO055::get_calib_status() {
     std::array<uint8_t, 4> data_array;
-    uint8_t buffer = read8(REG_CALIB_STAT);
+    uint8_t buffer = i2c_read8(REG_CALIB_STAT);
 
     for (int i = 3; i >= 0; i--) {
         data_array[3-i] = (buffer >> (2*i)) & 0x03;
@@ -164,9 +164,9 @@ std::array<uint8_t, 4> BNO055::get_calib_status() {
 }
 
 void BNO055::reset() {
-    write8(REG_OPR_MODE, OPR_MODE_CONFIG);
+    i2c_write8(REG_OPR_MODE, OPR_MODE_CONFIG);
     delay(10);
-    write8(REG_SYS_TRIGGER, 0x20);
+    i2c_write8(REG_SYS_TRIGGER, 0x20);
 
     // wait for the device to reboot
     while(!check_device()) {
@@ -176,7 +176,7 @@ void BNO055::reset() {
 
 void BNO055::set_mode(opr_mode_t mode) {
     this->mode = mode;
-    write8(REG_OPR_MODE, mode);
+    i2c_write8(REG_OPR_MODE, mode);
 }
 
 void BNO055::set_axis_remap(remap_t remap) {
@@ -184,44 +184,44 @@ void BNO055::set_axis_remap(remap_t remap) {
 
     switch(remap) {
         case REMAP_P0:
-            write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P0);
+            i2c_write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P0);
             delay(10);
-            write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P0);
+            i2c_write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P0);
             break;
         case REMAP_P1:
-            write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P1);
+            i2c_write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P1);
             delay(10);
-            write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P1);
+            i2c_write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P1);
             break;
         case REMAP_P2:
-            write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P2);
+            i2c_write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P2);
             delay(10);
-            write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P2);
+            i2c_write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P2);
             break;
         case REMAP_P3:
-            write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P3);
+            i2c_write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P3);
             delay(10);
-            write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P3);
+            i2c_write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P3);
             break;
         case REMAP_P4:
-            write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P4);
+            i2c_write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P4);
             delay(10);
-            write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P4);
+            i2c_write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P4);
             break;
         case REMAP_P5:
-            write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P5);
+            i2c_write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P5);
             delay(10);
-            write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P5);
+            i2c_write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P5);
             break;
         case REMAP_P6:
-            write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P6);
+            i2c_write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P6);
             delay(10);
-            write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P6);
+            i2c_write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P6);
             break;
         case REMAP_P7:
-            write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P7);
+            i2c_write8(REG_AXIS_REMAP_CONF, AXIS_REMAP_CONF_P7);
             delay(10);
-            write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P7);
+            i2c_write8(REG_AXIS_REMAP_SIGN, AXIS_REMAP_SIGN_P7);
             break;
     }
 }
